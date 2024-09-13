@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -14,6 +15,7 @@ func Run() {
 		log.Fatalf("error: %v", err)
 	}
 
+	fmt.Println("Server started on :8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		log.Fatalf("error: %v", err)
 	}
