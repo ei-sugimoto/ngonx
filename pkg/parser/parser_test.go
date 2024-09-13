@@ -2,6 +2,7 @@ package parser_test
 
 import (
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/ei-sugimoto/ngonx/pkg/parser"
@@ -56,6 +57,43 @@ port = 9090
 			t.Errorf("expected server %s not found", key)
 		} else if server != expectedServer {
 			t.Errorf("server %s = %v, want %v", key, server, expectedServer)
+		}
+	}
+}
+
+func TestGetURLList(t *testing.T) {
+	serverMap := parser.ServerMap{
+		"server1": {Host: "localhost", Port: 8080, EndPoint: ""},
+		"server2": {Host: "example.com", Port: 9090, EndPoint: ""},
+	}
+
+	expected := parser.URLAndEndPointList{
+		{URL: "http://localhost:8080", EndPoint: ""},
+		{URL: "http://example.com:9090", EndPoint: ""},
+	}
+
+	urlList := serverMap.GetURLList()
+
+	if len(urlList) != len(expected) {
+		t.Fatalf("expected %d URLs, got %d", len(expected), len(urlList))
+	}
+
+	extractedURLs := make([]string, len(urlList))
+	for i, ue := range urlList {
+		extractedURLs[i] = ue.URL
+	}
+
+	expectedURLs := make([]string, len(expected))
+	for i, ue := range expected {
+		expectedURLs[i] = ue.URL
+	}
+
+	sort.Strings(extractedURLs)
+	sort.Strings(expectedURLs)
+
+	for i, url := range extractedURLs {
+		if url != expectedURLs[i] {
+			t.Errorf("expected URL %s, got %s", expectedURLs[i], url)
 		}
 	}
 }
