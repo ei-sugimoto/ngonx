@@ -39,7 +39,8 @@ port = 9090
 	defer os.Setenv("CONFIG_PATH", originalPath)
 
 	// Parse関数を呼び出す
-	serverMap, err := parser.Parse()
+	p := parser.NewServer()
+	p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
 	}
@@ -51,7 +52,7 @@ port = 9090
 	}
 
 	for key, expectedServer := range expected {
-		if server, ok := serverMap[key]; !ok {
+		if server, ok := p[key]; !ok {
 			t.Errorf("expected server %s not found", key)
 		} else if server != expectedServer {
 			t.Errorf("server %s = %v, want %v", key, server, expectedServer)

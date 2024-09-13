@@ -11,18 +11,23 @@ type Server struct {
 	Port int    `toml:"port"`
 }
 
-func Parse() (map[string]Server, error) {
-	ServerMap := map[string]Server{}
+type ServerMap map[string]Server
+
+func NewServer() ServerMap {
+	return make(ServerMap)
+}
+
+func (s *ServerMap) Parse() error {
 
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		configPath = "/var/lib/ngonx/config.toml"
 	}
 
-	_, err := toml.DecodeFile(configPath, &ServerMap)
+	_, err := toml.DecodeFile(configPath, &s)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return ServerMap, nil
+	return nil
 }
