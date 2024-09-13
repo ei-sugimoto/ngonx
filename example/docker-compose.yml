@@ -1,0 +1,25 @@
+services:
+  service1:
+    image: nginx:latest
+    ports:
+      - "8081:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+
+  service2:
+    image: nginx:latest
+    ports:
+      - "8082:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+  
+  proxy:
+    image: ngonx:0.1.1
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.toml:/var/lib/ngonx/config.toml
+
+volumes:
+  html:
+    driver: local
