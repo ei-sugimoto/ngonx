@@ -1,9 +1,9 @@
 [server1]
 host = "service1"
-port = 8081
-endpoint = "/server1"
+port = 80
+endpoint = "/service1"
 
 [server2]
 host = "service2"
-port = 8082
-endpoint = "/server2"
+port = 80
+endpoint = "/service2"

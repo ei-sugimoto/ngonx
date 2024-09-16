@@ -11,8 +11,9 @@ RUN --mount=source=.,target=.\
     go build -o /go/bin/main .
 
 
-FROM gcr.io/distroless/cc
+FROM alpine:3.12
 
+RUN apk add --no-cache curl
 COPY --from=builder /go/bin/main /go/bin/main
 
 CMD ["/go/bin/main"]

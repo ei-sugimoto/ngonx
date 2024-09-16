@@ -19,6 +19,9 @@ services:
       - "8080:8080"
     volumes:
       - ./config.toml:/var/lib/ngonx/config.toml
+    depends_on:
+      - service1
+      - service2
 
 volumes:
   html:

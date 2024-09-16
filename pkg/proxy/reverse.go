@@ -1,70 +1,47 @@
 package proxy
 
 import (
-	"errors"
 	"log"
-	"net"
-	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"time"
+	"strconv"
+	"strings"
 
 	"github.com/ei-sugimoto/ngonx/pkg/parser"
+	"github.com/gin-gonic/gin"
 )
 
-func NewServe() (*http.ServeMux, error) {
+type ReverseProxy struct{}
+
+func NewReverseProxy() *ReverseProxy {
+	return &ReverseProxy{}
+}
+
+func (r *ReverseProxy) NewServe() {
 	p := parser.NewServer()
-	err := p.Parse()
-	if err != nil {
-		return nil, err
-	}
-	urlList := p.GetURLList()
-
-	proxyURLs := make([]url.URL, 0, len(urlList))
-	for _, u := range urlList {
-		parsedURL, err := url.Parse(u.URL)
-		if err != nil {
-			return nil, err
-		}
-		proxyURLs = append(proxyURLs, *parsedURL)
+	if err := p.Parse(); err != nil {
+		panic(err)
 	}
 
-	proxyList := make([]*httputil.ReverseProxy, 0, len(proxyURLs))
+	g := gin.Default()
 
-	for _, u := range proxyURLs {
-		proxy := httputil.NewSingleHostReverseProxy(&u)
-		proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-			log.Printf("proxy error: %v", err)
-			http.Error(w, "Bad Gateway: Unable to reach the backend server", http.StatusBadGateway)
-		}
-		proxy.Transport = &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout: 2 * time.Second,
-			}).DialContext,
-			TLSHandshakeTimeout:   2 * time.Second,
-			ResponseHeaderTimeout: 2 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		}
-		proxyList = append(proxyList, proxy)
+	for _, server := range p {
+		g.GET(server.EndPoint, r.makeReserveProxy(server.Host, strconv.Itoa(server.Port), server.EndPoint))
 	}
 
-	mux := http.NewServeMux()
-
-	if len(proxyList) == 0 {
-		return nil, errors.New("no proxy server")
+	if err := g.Run(":8080"); err != nil {
+		panic(err)
 	}
+}
 
-	if len(proxyList) != len(urlList) {
-		return nil, errors.New("proxy server count not match")
+func (r *ReverseProxy) makeReserveProxy(host string, port string, endpoint string) func(*gin.Context) {
+	return func(c *gin.Context) {
+		remote, _ := url.Parse("http://" + host + ":" + port)
+
+		log.Println("Proxy to", remote)
+		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, endpoint)
+		proxy := httputil.NewSingleHostReverseProxy(remote)
+
+		proxy.ServeHTTP(c.Writer, c.Request)
 	}
-
-	for idx, proxy := range proxyList {
-		mux.HandleFunc(urlList[idx].EndPoint, func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("proxy to %s for request %s", urlList[idx].URL, r.URL.Path)
-			time.Sleep(1 * time.Second)
-			proxy.ServeHTTP(w, r)
-		})
-	}
-
-	return mux, nil
 }
