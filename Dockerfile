@@ -11,9 +11,8 @@ RUN --mount=source=.,target=.\
     go build -o /go/bin/main .
 
 
-FROM alpine:3.12
+FROM busybox:latest
 
-RUN apk add --no-cache curl
 COPY --from=builder /go/bin/main /go/bin/main
 
 CMD ["/go/bin/main"]
